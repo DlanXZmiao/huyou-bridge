@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>狐友评论器 · 设置</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --line: #e4e7ec; --text: #1f2937;
+    --muted: #6b7280; --accent: #2563eb; --danger: #dc2626; --ok: #059669;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  header h1 { font-size: 20px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; }
+  .card .hint { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  textarea { width: 100%; min-height: 150px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.7; resize: vertical; }
+  textarea:focus, input:focus, select:focus { outline: 2px solid #bfdbfe; border-color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+  .field { display: flex; align-items: center; gap: 8px; }
+  .field label { color: var(--muted); font-size: 13px; }
+  input[type=number] { width: 90px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+  select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: #fff; }
+  .status { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 13px; }
+  .pill { background: #eef2ff; color: #3730a3; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+  .pill.warn { background: #fef3c7; color: #92400e; }
+  .pill.stop { background: #fee2e2; color: #991b1b; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: #f3f4f6; border: 1px solid var(--line); color: #4b5563; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-size: 14px; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.danger { color: var(--danger); border-color: #fecaca; background: #fff5f5; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #toast { position: fixed; right: 20px; bottom: 20px; background: #111827; color: #fff; padding: 10px 16px; border-radius: 10px; opacity: 0; transition: .2s; pointer-events: none; font-size: 13px; max-width: 420px; }
+  #toast.show { opacity: 1; }
+  .result { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 12px; background: #fafafa; }
+  .result .meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .result .quote { color: #374151; margin-bottom: 8px; }
+  .result .decide { font-size: 13px; }
+  .good { color: var(--ok); font-weight: 600; }
+  .bad { color: var(--danger); font-weight: 600; }
+  .mono { font-family: ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>狐友评论器</h1>
+    <span class="sub">只在本机运行 · 改动保存后下一轮生效</span>
+  </header>
+
+  <div class="card">
+    <h2>状态</h2>
+    <div class="status" id="status">加载中…</div>
+  </div>
+
+  <div class="card">
+    <h2>已发评论</h2>
+    <p class="hint">每页 5 条，最新的在最上面。点「原帖」可以去狐友看它评论的是哪条。</p>
+    <div id="sentList"></div>
+    <div class="actions" id="sentPager" style="margin-top:10px;display:none">
+      <button id="sentPrev">上一页</button>
+      <span class="hint" id="sentPageInfo" style="margin:0"></span>
+      <button id="sentNext">下一页</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>发帖</h2>
+    <p class="hint">周礼体一段 + 白话一段，配图从「表情包」随机挑一张。</p>
+    <div class="row">
+      <div class="field"><label><input type="checkbox" id="postEnabled" /> 启用发帖</label></div>
+      <div class="field">
+        <label>方式</label>
+        <select id="postMode">
+          <option value="manual">仅手动</option>
+          <option value="daily">每天定时</option>
+        </select>
+      </div>
+      <div class="field"><label>时间</label><input type="time" id="postTime" /></div>
+      <div class="field">
+        <label>圈子 ID</label>
+        <input type="text" id="postCircle" class="mono" style="width:220px;padding:6px 8px;border:1px solid var(--line);border-radius:8px" />
+      </div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="primary" id="savePost">保存发帖设置</button>
+      <button id="postDraft">生成草稿</button>
+      <button class="primary" id="postPublish">立即发帖</button>
+      <span class="hint" id="postHint" style="margin:0"></span>
+    </div>
+    <div id="postPreview"></div>
+    <div id="postHistory"></div>
+  </div>
+
+  <div class="card">
+    <h2>楼中楼</h2>
+    <p class="hint">别人回复了你的评论时的线程。刷新只读接口，不消耗模型 token。</p>
+    <div class="actions" style="margin-bottom:8px">
+      <button id="loadThreads">刷新线程</button>
+    </div>
+    <div id="threadsList"><div class="hint">点「刷新线程」查看。</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Token 用量</h2>
+    <p class="hint">按天统计，跨天自动清零；成本按 DeepSeek 官方价粗估（输入 ¥2/百万、输出 ¥8/百万）。</p>
+    <div id="usage"></div>
+  </div>
+
+  <div class="card">
+    <h2>人设</h2>
+    <p class="hint">模型写评论时参考。写得越像具体的人，评论越不像模板。</p>
+    <textarea id="persona" spellcheck="false"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>评论策略</h2>
+    <p class="hint">决定"什么帖子值得评"。下面这些硬闸门不受这里影响，代码层直接拦。</p>
+    <textarea id="policy" spellcheck="false"></textarea>
+    <div style="margin-top:12px">
+      <div class="hint" style="margin-bottom:6px">硬闸门（只读）：</div>
+      <div class="chips" id="topics"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>配额与模式</h2>
+    <div class="row">
+      <div class="field">
+        <label>模式</label>
+        <select id="mode">
+          <option value="off">off（只读，不发）</option>
+          <option value="dry-run">dry-run（生成但不发）</option>
+          <option value="auto">auto（真发）</option>
+        </select>
+      </div>
+      <div class="field"><label>每天最多</label><input type="number" id="maxPerDay" min="1" max="20" /> 条</div>
+      <div class="field"><label>每小时最多</label><input type="number" id="maxPerHour" min="1" max="10" /> 条</div>
+      <div class="field"><label>最小间隔</label><input type="number" id="minGapSec" min="30" max="600" step="10" /> 秒</div>
+      <div class="field"><label>轮询间隔</label><input type="number" id="pollMin" min="1" max="360" /> 分钟</div>
+      <div class="field"><label>楼中楼扫描</label><input type="number" id="threadsMin" min="1" max="360" /> 分钟</div>
+      <div class="field"><label><input type="checkbox" id="replyThreads" /> 回复楼中楼</label></div>
+      <div class="field"><label>每条字数</label>
+        <input type="number" id="minChars" min="2" max="50" /> – <input type="number" id="maxChars" min="10" max="140" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label>楼中楼：每线程最多回</label><input type="number" id="threadRounds" min="1" max="10" /> 次</div>
+      <div class="field"><label>只回</label><input type="number" id="threadWindow" min="1" max="168" /> 小时内的</div>
+      <div class="field"><label>回复每天</label><input type="number" id="threadPerDay" min="0" max="50" /> 条</div>
+      <div class="field"><label>每小时</label><input type="number" id="threadPerHour" min="0" max="20" /> 条</div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="hint" style="margin-bottom:6px">只看这些圈子（每行一个：名字或 ID；留空 = 全部推荐流）</div>
+      <textarea id="circles" style="min-height:64px" spellcheck="false"></textarea>
+    </div>
+    <div class="actions" style="margin-top:16px">
+      <button class="primary" id="save">保存并生效</button>
+      <button id="try">试写一条</button>
+      <span class="hint" id="saveHint" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>试写结果</h2>
+    <p class="hint">只生成、不发送。用来校准人设和策略。</p>
+    <div id="tryResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>上下文清理</h2>
+    <p class="hint">删掉超过 N 小时的评论记录、楼中楼线程、发帖记录和判定缓存；N 小时以内的保留。只删本地记录，不动狐友上的内容。</p>
+    <div class="row">
+      <div class="field"><label><input type="checkbox" id="cleanAuto" /> 每天自动清理</label></div>
+      <div class="field"><label>时间</label><input type="time" id="cleanTime" /></div>
+      <div class="field"><label>保留</label><input type="number" id="cleanHours" min="1" max="720" value="48" /> 小时</div>
+      <button id="cleanBtn">立即清理</button>
+      <span class="hint" id="cleanHint" style="margin:0"></span>
+    </div>
+    <div id="cleanStats" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2>停止 / 恢复</h2>
+    <p class="hint">停止后会立刻跳过所有轮次（调度器看到 STOP 文件就退出）。</p>
+    <div class="actions">
+      <button class="danger" id="stop">立即停止</button>
+      <button id="resume">恢复运行</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const token = new URLSearchParams(location.search).get('token') || '';
+const $ = (id) => document.getElementById(id);
+
+function toast(msg, ms = 2600) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+async function api(pathname, options = {}) {
+  const res = await fetch(pathname, {
+    ...options,
+    headers: { 'content-type': 'application/json', 'x-token': token, ...(options.headers || {}) }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+let sentPage = 1;
+
+async function loadSent(page = 1) {
+  try {
+    const r = await api(`/api/sent?page=${page}&size=5`);
+    sentPage = r.page;
+    renderSentItems(r);
+  } catch (e) {
+    $('sentList').innerHTML = `<div class="bad">加载失败：${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderSentItems(r) {
+  const list = r.items || [];
+  if (!list.length) {
+    $('sentList').innerHTML = '<div class="hint">还没有发过评论。</div>';
+    $('sentPager').style.display = 'none';
+    return;
+  }
+  $('sentList').innerHTML = list.map((s) => `
+    <div class="result" style="margin-top:8px">
+      <div class="meta">${s.at ? new Date(s.at).toLocaleString('zh-CN') : '—'} · <a href="${s.postUrl}" target="_blank" rel="noreferrer">原帖</a>${s.commentId ? ' · id ' + s.commentId : ''}</div>
+      <div>「${escapeHtml(s.text)}」</div>
+    </div>`).join('');
+  $('sentPager').style.display = 'flex';
+  $('sentPageInfo').textContent = `第 ${r.page} / ${r.pages} 页 · 共 ${r.total} 条`;
+  $('sentPrev').disabled = r.page <= 1;
+  $('sentNext').disabled = r.page >= r.pages;
+}
+
+$('sentPrev').addEventListener('click', () => loadSent(sentPage - 1));
+$('sentNext').addEventListener('click', () => loadSent(sentPage + 1));
+
+function renderUsage(u) {
+  u = u || { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  const cost = (u.promptTokens / 1e6) * 2 + (u.completionTokens / 1e6) * 8;
+  $('usage').innerHTML = `
+    <div class="status">
+      <span>今日调用：<b>${u.calls}</b> 次</span>
+      <span>输入：<b>${u.promptTokens.toLocaleString()}</b> tokens</span>
+      <span>输出：<b>${u.completionTokens.toLocaleString()}</b> tokens</span>
+      <span>合计：<b>${u.totalTokens.toLocaleString()}</b> tokens</span>
+      <span>约 <b>¥${cost.toFixed(3)}</b></span>
+    </div>`;
+}
+
+function renderStatus(s) {
+  const stop = s.status.stopOn;
+  const parts = [
+    `<span>模型：<b>${s.model}</b></span>`,
+    `<span>今日已发：<b>${s.status.dayCount}</b> / ${s.quota.maxPerDay}</span>`,
+    `<span>最近发送：${s.status.lastSentAt ? new Date(s.status.lastSentAt).toLocaleString('zh-CN') : '还没有'}</span>`,
+    stop ? '<span class="pill stop">已停止</span>' : '<span class="pill">运行中</span>',
+    s.quota.dryRun ? '<span class="pill warn">dry-run</span>' : ''
+  ];
+  if (s.status.blockedUntil && s.status.blockedUntil > Date.now()) {
+    parts.push(`<span class="pill warn">熔断到 ${new Date(s.status.blockedUntil).toLocaleTimeString('zh-CN')}</span>`);
+  }
+  $('status').innerHTML = parts.join('');
+  $('topics').innerHTML = (s.gates.hardBlockTopics || []).map((t) => `<span class="chip">${t}</span>`).join('');
+}
+
+function fill(s) {
+  $('persona').value = s.persona || '';
+  $('policy').value = s.policy || '';
+  $('mode').value = s.quota.mode || 'off';
+  $('maxPerDay').value = s.quota.maxPerDay;
+  $('maxPerHour').value = s.quota.maxPerHour;
+  $('minGapSec').value = Math.round((s.quota.minGapMs || 90000) / 1000);
+  $('pollMin').value = Math.round((s.quota.pollIntervalMs ?? s.pollIntervalMs ?? 600000) / 60000);
+  $('threadsMin').value = Math.round((s.quota.threadsScanIntervalMs ?? 600000) / 60000);
+  $('threadRounds').value = s.quota.threadMaxRounds ?? 2;
+  $('threadWindow').value = s.quota.threadWindowHours ?? 24;
+  $('threadPerDay').value = s.quota.threadMaxPerDay ?? 5;
+  $('threadPerHour').value = s.quota.threadMaxPerHour ?? 2;
+  $('circles').value = [...(s.quota.allowCircles || []), ...(s.quota.circleIds || [])].join('\n');
+  $('replyThreads').checked = s.quota.replyThreads !== false;
+  const post = s.post || {};
+  $('postEnabled').checked = post.enabled === true;
+  $('postMode').value = post.mode === 'daily' ? 'daily' : 'manual';
+  $('postTime').value = post.dailyTime || '20:30';
+  $('postCircle').value = post.circleId || '';
+  renderPostHistory(s.posts || []);
+  $('minChars').value = s.quota.minChars;
+  $('maxChars').value = s.quota.maxChars;
+  renderStatus(s);
+  loadSent(sentPage);
+  renderUsage(s.usage);
+  renderContext(s.context);
+  const cl = s.cleanup || {};
+  $('cleanAuto').checked = cl.enabled === true;
+  $('cleanTime').value = cl.dailyTime || '03:30';
+  if (cl.hours) $('cleanHours').value = cl.hours;
+}
+
+/** 只刷新统计（状态/已发/用量），不动你正在编辑的文本框。 */
+async function refreshStats() {
+  try {
+    const s = await api('/api/state');
+    renderStatus(s);
+    await loadSent(sentPage);
+    renderUsage(s.usage);
+  } catch { /* 刷新失败不打断 */ }
+}
+
+async function load() {
+  try {
+    fill(await api('/api/state'));
+  } catch (e) {
+    $('status').textContent = '加载失败：' + e.message;
+  }
+}
+
+$('save').addEventListener('click', async () => {
+  const btn = $('save');
+  btn.disabled = true;
+  try {
+    const mode = $('mode').value;
+    if (mode === 'auto' && !confirm('确认切到 auto？之后模型会在你的账号下真实发布评论。')) {
+      btn.disabled = false;
+      return;
+    }
+    await api('/api/save', {
+      method: 'POST',
+      body: JSON.stringify({
+        persona: $('persona').value,
+        policy: $('policy').value,
+        quota: {
+          mode,
+          dryRun: mode !== 'auto',
+          maxPerDay: Number($('maxPerDay').value),
+          maxPerHour: Number($('maxPerHour').value),
+          minGapMs: Number($('minGapSec').value) * 1000,
+          minChars: Number($('minChars').value),
+          maxChars: Number($('maxChars').value),
+          pollIntervalMs: Number($('pollMin').value) * 60000,
+          threadsScanIntervalMs: Number($('threadsMin').value) * 60000,
+          threadMaxRounds: Number($('threadRounds').value),
+          threadWindowHours: Number($('threadWindow').value),
+          threadMaxPerDay: Number($('threadPerDay').value),
+          threadMaxPerHour: Number($('threadPerHour').value),
+          circles: $('circles').value,
+          replyThreads: $('replyThreads').checked
+        },
+        post: {
+          enabled: $('postEnabled').checked,
+          mode: $('postMode').value,
+          dailyTime: $('postTime').value,
+          circleId: $('postCircle').value.trim()
+        },
+        cleanup: {
+          enabled: $('cleanAuto').checked,
+          hours: Number($('cleanHours').value),
+          dailyTime: $('cleanTime').value
+        }
+      })
+    });
+    $('saveHint').textContent = '已保存 ' + new Date().toLocaleTimeString('zh-CN');
+    toast('已保存，下一轮生效');
+    await load();
+  } catch (e) {
+    toast('保存失败：' + e.message, 4000);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('try').addEventListener('click', async () => {
+  const btn = $('try');
+  btn.disabled = true;
+  $('tryResult').innerHTML = '<div class="hint">正在挑帖、生成…（最多十几秒）</div>';
+  try {
+    const r = await api('/api/try', { method: 'POST', body: '{}' });
+    if (!r.ok) throw new Error(r.error || '没有结果');
+    $('tryResult').innerHTML = r.results.map((x) => {
+      const d = x.decision;
+      const isComment = d.action === 'comment';
+      const gate = x.gate.ok
+        ? '<span class="good">闸门通过</span>'
+        : `<span class="bad">闸门拦截</span> <span class="mono">${(x.gate.reasons || []).join('；')}</span>`;
+      return `
+        <div class="result">
+          <div class="meta">${x.circle || '—'} · ${x.feedId}</div>
+          <div class="quote">${escapeHtml(x.content)}</div>
+          <div class="decide">
+            <b>${isComment ? '想评论' : '不评论'}</b>（${d.confidence}）
+            ${isComment ? `→ 「${escapeHtml(d.text)}」` : `：${escapeHtml(d.reason)}`}
+            <br />${gate}
+          </div>
+        </div>`;
+    }).join('');
+    await refreshStats();
+  } catch (e) {
+    $('tryResult').innerHTML = `<div class="bad">失败：${escapeHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('stop').addEventListener('click', async () => {
+  try { await api('/api/stop', { method: 'POST', body: '{}' }); toast('已停止'); await load(); }
+  catch (e) { toast('失败：' + e.message); }
+});
+
+$('resume').addEventListener('click', async () => {
+  try { await api('/api/resume', { method: 'POST', body: '{}' }); toast('已恢复'); await load(); }
+  catch (e) { toast('失败：' + e.message); }
+});
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderContext(c) {
+  c = c || {};
+  const oldest = c.oldestSentAt ? new Date(c.oldestSentAt).toLocaleString('zh-CN') : '—';
+  $('cleanStats').innerHTML = `
+    <div class="status">
+      <span>评论记录：<b>${c.sent ?? 0}</b></span>
+      <span>楼中楼线程：<b>${c.threads ?? 0}</b></span>
+      <span>发帖记录：<b>${c.posts ?? 0}</b></span>
+      <span>判定缓存：<b>${c.decisions ?? 0}</b></span>
+      <span>最早一条：${oldest}</span>
+    </div>`;
+}
+
+function renderThreads(list) {
+  if (!list.length) {
+    $('threadsList').innerHTML = '<div class="hint">近 3 天没有可展示的评论线程。</div>';
+    return;
+  }
+  $('threadsList').innerHTML = list.map((t) => {
+    const replies = (t.replies || []).map((r) => {
+      const tag = r.isMine ? '我' : (r.forMe ? '回我' : '回别人');
+      const status = r.handled ? `已处理：${escapeHtml(r.handled)}` : '未处理';
+      return `<div style="margin:4px 0 4px 16px">↳ ${escapeHtml(r.userName)}：${escapeHtml(r.content)} <span class="pill">${tag}</span> <span class="hint">${status}</span></div>`;
+    }).join('');
+    return `<div class="result">
+      <div class="meta">${new Date(t.at).toLocaleString('zh-CN')} · 已回 ${t.myRounds}/${t.maxRounds}${t.stopped ? ' · 已停止' : ''} · <a href="${t.postUrl}" target="_blank" rel="noreferrer">原帖</a></div>
+      <div>我：「${escapeHtml(t.myText)}」</div>
+      ${replies || '<div class="hint" style="margin-left:16px">还没有人回复</div>'}
+    </div>`;
+  }).join('');
+}
+
+$('loadThreads').addEventListener('click', async () => {
+  const btn = $('loadThreads');
+  btn.disabled = true;
+  $('threadsList').innerHTML = '<div class="hint">读取中…</div>';
+  try {
+    const r = await api('/api/threads');
+    renderThreads(r.threads || []);
+  } catch (e) {
+    $('threadsList').innerHTML = `<div class="bad">失败：${escapeHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderPostHistory(list) {
+  if (!list.length) {
+    $('postHistory').innerHTML = '<div class="hint" style="margin-top:8px">还没有发过动态。</div>';
+    return;
+  }
+  $('postHistory').innerHTML = '<div class="hint" style="margin-top:10px">最近发的：</div>' + list.map((p) => `
+    <div class="result" style="margin-top:8px">
+      <div class="meta">${new Date(p.at).toLocaleString('zh-CN')}${p.feedId ? ` · <a href="https://w.sohu.com/?feedDetail=${p.feedId}" target="_blank" rel="noreferrer">原帖</a>` : ''}</div>
+      <div style="white-space:pre-wrap">${escapeHtml(String(p.text).slice(0, 200))}</div>
+    </div>`).join('');
+}
+
+function renderPostPreview(d) {
+  $('postPreview').innerHTML = `
+    <div class="result" style="margin-top:10px">
+      <div class="meta">草稿 · 配图：${d.image ? escapeHtml(d.image) : '（表情包目录为空）'}</div>
+      <div style="white-space:pre-wrap">${escapeHtml(d.text)}</div>
+    </div>`;
+}
+
+$('postDraft').addEventListener('click', async () => {
+  const btn = $('postDraft');
+  btn.disabled = true;
+  $('postHint').textContent = '生成中…（十几秒）';
+  try {
+    const r = await api('/api/post/draft', { method: 'POST', body: '{}' });
+    renderPostPreview(r.draft);
+    $('postHint').textContent = '草稿已生成，未发布';
+    await refreshStats();
+  } catch (e) {
+    $('postHint').textContent = '失败：' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('postPublish').addEventListener('click', async () => {
+  if (!confirm('确认发布这条动态？会真的发到狐友上。')) return;
+  const btn = $('postPublish');
+  btn.disabled = true;
+  $('postHint').textContent = '发布中…';
+  try {
+    const r = await api('/api/post/publish', { method: 'POST', body: '{}' });
+    renderPostPreview(r.draft);
+    $('postHint').textContent = r.ok ? `已发布（${r.feedId}）` : `失败：${r.status} ${r.desc}`;
+    await refreshStats();
+    const s = await api('/api/state');
+    renderPostHistory(s.posts || []);
+  } catch (e) {
+    $('postHint').textContent = '失败：' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('savePost').addEventListener('click', async () => {
+  const btn = $('savePost');
+  btn.disabled = true;
+  $('postHint').textContent = '保存中…';
+  try {
+    const r = await api('/api/save-post', {
+      method: 'POST',
+      body: JSON.stringify({
+        enabled: $('postEnabled').checked,
+        mode: $('postMode').value,
+        dailyTime: $('postTime').value,
+        circleId: $('postCircle').value.trim()
+      })
+    });
+    const p = r.post || {};
+    $('postHint').textContent = `已保存：${p.enabled ? '已启用' : '未启用'} · ${p.mode === 'daily' ? '每天 ' + p.dailyTime : '仅手动'}`;
+    toast('发帖设置已保存到 settings/post.json');
+  } catch (e) {
+    $('postHint').textContent = '保存失败：' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('cleanBtn').addEventListener('click', async () => {
+  const hours = Number($('cleanHours').value) || 48;
+  if (!confirm(`确认清理 ${hours} 小时之前的本地记录？不可撤销（不影响狐友上的内容）。`)) return;
+  const btn = $('cleanBtn');
+  btn.disabled = true;
+  $('cleanHint').textContent = '清理中…';
+  try {
+    const r = await api('/api/cleanup', { method: 'POST', body: JSON.stringify({ hours }) });
+    const rm = r.removed || {};
+    $('cleanHint').textContent = `已删：评论 ${rm.sent} · 线程 ${rm.threads} · 发帖 ${rm.posts} · 缓存 ${rm.decisions}`;
+    const s = await api('/api/state');
+    renderContext(s.context);
+  } catch (e) {
+    $('cleanHint').textContent = '失败：' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+load();
+</script>
+</body>
+</html>

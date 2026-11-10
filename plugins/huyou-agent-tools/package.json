@@ -1,0 +1,12 @@
+{
+  "name": "huyou-agent-tools",
+  "version": "0.1.0",
+  "description": "狐友（w.sohu.com）MCP 工具 bundle：把 mcp-huyou 挂进 DSH，提供 huyou_* 只读工具与草稿预检",
+  "type": "module",
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "huyou-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH ↔ 狐友（w.sohu.com）：读公开信息流，按人设生成并提交评论。独立于 qq-bridge。",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "login": "node src/login.mjs",
+    "verify": "node scripts/verify-api.mjs",
+    "dry-run": "node scripts/dry-run.mjs",
+    "post": "node scripts/post-comment.mjs",
+    "test": "node scripts/test-gates.mjs && node scripts/test-feed.mjs && node scripts/test-decide.mjs",
+    "run": "node src/scheduler.js --once",
+    "run:send": "node src/scheduler.js --once --send",
+    "loop": "node src/scheduler.js --loop",
+    "console": "node src/console.js",
+    "start": "node src/scheduler.js --loop"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
+}

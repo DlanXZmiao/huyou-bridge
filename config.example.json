@@ -1,0 +1,54 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 3400
+  },
+  "huyou": {
+    "webBase": "https://w.sohu.com",
+    "apiHosts": {
+      "cs": "https://cs-ol.sns.sohu.com",
+      "op": "https://op-ol.sns.sohu.com",
+      "dm": "https://dm-ol.sns.sohu.com"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+    "pollIntervalMs": 600000,
+    "maxCandidatesPerRound": 5,
+    "maxAgeHours": 168,
+    "decideTtlHours": 6
+  },
+  "comment": {
+    "minGapMs": 90000,
+    "maxPerRound": 1,
+    "deleteOnReject": false
+  },
+  "llm": {
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "baseURL": "https://api.deepseek.com",
+    "apiKeyEnv": "DEEPSEEK_API_KEY",
+    "apiKey": ""
+  },
+  "mcp": {
+    "allowSend": false
+  },
+  "gates": {
+    "hardBlockTopics": [
+      "自伤", "自杀", "想死", "不想活", "自残", "抑郁", "崩溃",
+      "疾病", "癌症", "手术",
+      "贫困", "没钱", "欠钱", "学费", "家暴", "性取向", "政治", "宗教",
+      "抽奖", "广告", "加微信"
+    ],
+    "bannedPhrases": [
+      "抱抱", "加油", "心疼你", "我懂你", "一切都会好"
+    ],
+    "noLinks": true,
+    "noAt": true,
+    "noRepeatSameFeed": true
+  },
+  "circuitBreaker": {
+    "consecutiveFailures": 3,
+    "cooldownMs": 3600000
+  },
+  "sessionFile": "state/session.json",
+  "killSwitchFile": "state/STOP"
+}

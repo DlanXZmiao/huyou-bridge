@@ -1,0 +1,20 @@
+{
+  "mode": "auto",
+  "dryRun": false,
+  "maxPerDay": 20,
+  "maxPerHour": 3,
+  "minGapMs": 90000,
+  "minChars": 6,
+  "maxChars": 60,
+  "pollIntervalMs": 1800000,
+  "threadsScanIntervalMs": 600000,
+  "threadMaxRounds": 2,
+  "threadWindowHours": 24,
+  "threadMaxPerDay": 5,
+  "threadMaxPerHour": 2,
+  "replyThreads": true,
+  "allowCircles": [
+    "汕大树洞"
+  ],
+  "circleIds": []
+}

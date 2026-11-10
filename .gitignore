@@ -1,0 +1,9 @@
+node_modules/
+state/
+settings/.history/
+*.log
+config.json
+
+# 表情包图片属于个人素材，不进仓库（保留说明文件）
+表情包/*
+!表情包/README.md
