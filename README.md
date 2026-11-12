@@ -22,6 +22,30 @@
 **现在可以做**：在 DSH 会话里直接问"狐友上有什么"（通过 `huyou_*` 工具），或者在设置页调人设/配额，
 由调度器自动跑；也可以让 agent 用 `huyou_draft_comment` 做发送前预检。
 
+## 配置模型 Key
+
+模型调用是纯 HTTP（`api.deepseek.com`），不经过 DSH，也不依赖任何 SDK。Key 按这个顺序查找：
+
+1. 环境变量 `DEEPSEEK_API_KEY`
+2. `config.json` 的 `llm.apiKey`
+3. `~/.dsh/.credentials.yaml` 里的 `DEEPSEEK_API_KEY`（只有本机装了 DSH 才会走到这一步）
+
+clone 之后用前两种之一即可：
+
+```powershell
+# 方式一：环境变量（当前窗口有效）
+$env:DEEPSEEK_API_KEY = "sk-你的key"
+node src/scheduler.js --once
+```
+
+```powershell
+# 方式二：复制模板，把 key 填进 config.json 的 llm.apiKey
+copy config.example.json config.json
+```
+
+`config.json` 已在 `.gitignore` 里排除，不会误提交；`config.example.json` 的 `apiKey` 是空串。
+没配 key 时会直接报错提示，不会静默失败。
+
 ## DSH 插件
 
 ```powershell
